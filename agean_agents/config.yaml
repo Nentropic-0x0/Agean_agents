@@ -1,0 +1,123 @@
+# Global configuration for the system
+system:
+  name: "Multi-Purpose Cybersecurity Agent System"
+  environment: "production"  # Could be "development", "staging", "production"
+  version: "1.0.0"
+  tracing: true  # Enable LangSmith tracing
+  humanloop_integration: true  # Enable Humanloop feedback integration
+  langsmith_api_key: "${LANGCHAIN_API_KEY}"  # Use environment variable for security
+  humanloop_api_key: "${HUMANLOOP_API_KEY}"
+
+# Define agents in the system
+agents:
+  - name: "ThreatDetectionAgent"
+    type: "LLM"
+    description: "Detects and analyzes potential threats in the network."
+    model:
+      provider: "openai"
+      model_name: "gpt-4"
+      api_key: "${OPENAI_API_KEY}"
+      temperature: 0.0  # For precise threat detection
+      max_tokens: 1500
+    tasks:
+      - "Scan network traffic for malicious activity"
+      - "Analyze security logs for anomalies"
+    integrations:
+      tracing: true
+      humanloop: true
+    feedback:
+      request_feedback: true  # Request feedback for detected threats
+      feedback_integration: "Humanloop"
+    monitoring:
+      alert_on_failure: true  # Send alerts if agent fails to detect threats
+    logging:
+      enabled: true
+      log_level: "INFO"
+      log_destination: "logs/threat_detection.log"
+
+  - name: "VulnerabilityScannerAgent"
+    type: "LLM"
+    description: "Scans systems for known vulnerabilities and provides remediation suggestions."
+    model:
+      provider: "huggingface"
+      model_name: "bert-base-cased"
+      api_key: "${HUGGINGFACE_API_KEY}"
+      temperature: 0.2  # Adjust model temperature for open-ended vulnerability suggestions
+      max_tokens: 1200
+    tasks:
+      - "Scan systems for known CVEs"
+      - "Recommend patches for critical vulnerabilities"
+    integrations:
+      tracing: true
+      humanloop: false  # No Humanloop integration for this agent
+    feedback:
+      request_feedback: false
+    monitoring:
+      alert_on_high_risk_vulnerability: true  # Alert if a critical vulnerability is found
+    logging:
+      enabled: true
+      log_level: "DEBUG"
+      log_destination: "logs/vulnerability_scanner.log"
+
+  - name: "IncidentResponseAgent"
+    type: "Agent"
+    description: "Manages incident responses, triggering playbooks and automating actions."
+    tools:
+      - "incident_management_tool"
+      - "ticketing_system"
+    tasks:
+      - "Triage incidents based on severity"
+      - "Open tickets for critical incidents"
+      - "Execute automated remediation actions"
+    integrations:
+      tracing: false
+      humanloop: true
+    feedback:
+      request_feedback: true
+      feedback_integration: "Humanloop"
+    monitoring:
+      alert_on_incident: true  # Alerts for all incidents
+    logging:
+      enabled: true
+      log_level: "INFO"
+      log_destination: "logs/incident_response.log"
+
+# Humanloop project settings
+humanloop:
+  project_name: "Cybersecurity_Reports"
+  api_key: "${HUMANLOOP_API_KEY}"
+  request_feedback_on_actions: true  # Feedback for all agent actions
+  max_feedback_requests_per_day: 100  # Limit feedback requests to avoid overwhelming users
+
+# LangSmith settings for tracing and performance monitoring
+langsmith:
+  enabled: true
+  api_key: "${LANGCHAIN_API_KEY}"
+  tracing:
+    enable_for_all_agents: true
+    storage: "cloud"  # Can also be "local" for development
+    alert_on_high_latency: true
+    threshold_latency_ms: 500  # Alert if latency is above 500ms
+
+# Global logging settings
+logging:
+  format: "json"  # Log format can be "json" or "text"
+  destination: "logs/system.log"
+  log_level: "INFO"
+  rotate_logs: true
+  max_log_size_mb: 100  # Rotate logs if they exceed 100MB
+  max_backups: 7  # Keep 7 backups of rotated logs
+
+# Security settings (for managing sensitive data and keys)
+security:
+  encrypt_logs: true  # Encrypt sensitive logs
+  secure_env_vars: true  # Ensure environment variables are loaded securely
+  key_management_service: "${KMS_API_KEY}"  # Key management for API keys and sensitive data
+
+# Monitoring and alerting settings
+monitoring:
+  enable_system_monitoring: true
+  alerting_thresholds:
+    memory_usage_percent: 90  # Alert if memory usage exceeds 90%
+    cpu_usage_percent: 85  # Alert if CPU usage exceeds 85%
+  alert_destination: "alerts@cybersecuritysystem.com"

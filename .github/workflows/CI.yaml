@@ -1,0 +1,52 @@
+name: Python Lint and Formatting
+
+# Run this workflow on pushes to the 'main' branch
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  lint:
+    name: Lint Code
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 1: Check out the repository
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # Step 2: Set up Python environment
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'  # Specify the Python version to use
+
+      # Step 3: Install dependencies
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pylint flake8 isort black
+
+      # Step 4: Run pylint for code analysis
+      - name: Run pylint
+        run: |
+          pylint **/*.py
+
+      # Step 5: Run isort to check import ordering
+      - name: Check import sorting with isort
+        run: |
+          isort --check-only .
+
+      # Step 6: Run flake8 for PEP8 and other style checks
+      - name: Run flake8
+        run: |
+          flake8 .
+
+      # Step 7: Run black to check code formatting
+      - name: Check code formatting with black
+        run: |
+          black --check .

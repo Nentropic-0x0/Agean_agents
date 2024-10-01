@@ -1,0 +1,18 @@
+{
+    "message_id": "uuid-string",               
+    "timestamp": "ISO 8601 timestamp",         
+    "from_agent": "uuid-string",               
+    "to_agent": "uuid-string",                 
+    "message_type": "instruction | response",  
+    "payload": {                               
+      "task": "task-name",                     
+      "data": {                                
+        "ip_address": "1.2.3.4",               
+        "file_hash": "hash-string"             
+      }
+    },
+    "response": {                              
+      "status": "success | failure",           
+      "details": "Description of outcome"      
+    }
+  }
