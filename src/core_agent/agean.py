@@ -5,44 +5,28 @@
 
 
 """
-from typing import Dict, List, Optional, Tuple
-from langchain.chains import LLMChain
-from langchain.prompts import PromptTemplate
-from langchain_community.llms import OpenAI
-from langsmith import LangSmith
-
-from typing import Any, AsyncIterable, Dict, Literal, Optional, Union
-
+from typing import Dict, List, Optional, Tuple, \
+                    Any, AsyncIterable, Dict, Literal, Optional, Union
+from src.tools import CTITools
 from langchain.agents import AgentExecutor
-from langchain.agents.format_scratchpad.openai_tools import (
-    format_to_openai_tool_messages,
-)
-from langchain.agents.output_parsers.openai_tools import OpenAIToolsAgentOutputParser
-from langchain.prompts import MessagesPlaceholder
-from langchain_community.callbacks import get_openai_callback
-from langchain_core.messages import AIMessage, HumanMessage
-from langchain_core.prompts import ChatPromptTemplate
-from langchain_openai import AzureChatOpenAI, ChatOpenAI
-
-from .prompts import RobotSystemPrompts, system_prompts
-from .tools import ROSATools
-
 from src.prompts_config import CTIPrompts
-tracing = LangSmith()
+from src.llm import llm_config, model
+import langsmith
 
-class Agean:
+
+class AGEAN:
     def __init__(self, name: str="Multi-Purpose Cybersecurity Agent System", 
-                 llm: str = "gpt-4o-mini", 
                  tools: Optional[List] = None, tracing: bool = True, 
-                 prompts: Optional[CTIPrompts] = CTIPrompts(), verbose: bool = False, accumulate_chat_history: bool = True,
+                 verbose: bool = False, accumulate_chat_history: bool = True,
                  show_token_usage: bool=False, streaming: bool = True, blacklist: Optional[List[str]] = None):
-        
+        self.tracing = LangSmith()
+        self.system_prompts = system_prompts
         self.__name = name
         self.__prompts = prompts
         self.__chat_history = []
-        self.__llm = llm.with_config({"streaming": streaming})
+        self.__llm = llm_config("streaming": streaming)
         self.__tools = self.get_tools(
-            packages=tool_packages, tools=tools, blacklist=self.blacklist
+        self.packages = tool_packages, tools=tools, blacklist=self.blacklist
         )
         self.__memory_key = "chat_history"
         self.__scratchpad = "agent_scratchpad"
@@ -59,6 +43,11 @@ class Agean:
     def clear_chat(self):
         "Clear Chat History"
         self.__chat_history = []
+        
+    def task_handler(self, tasks: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        return tasks.pop(0)
+    
+    
     
     def invoke(self, query: str) -> str:
         """
@@ -189,7 +178,34 @@ class Agean:
             if tools:
                 asean_tools.add_tools(tools)
             if packages:
-                asean_tools.add_packages(packages, blacklist=blacklist)                         
+                asean_tools.add_packages(packages, blacklist=blacklist)
+            return asean_tools
+        
+        def _get_prompts(
+            self, agean_prompts: Optional[CTIPrompts] = None
+        ) -> ChatPromptTemplate:
+            "Create a chat prompt template fro mthe system prompts and specific prompts"
+            prompts = self.system_prompts
+            
+            if asean_prompts:
+                prompts.append(asean_prompts.as_message())
+                
+            template = ChatPromptTemplate.from_messages(
+                prompts
+                + [
+                    MessagesPlaceholder(variable_name=self.__memory_key),
+                    ("user", "{input}"),
+                    MessagesPlaceholder(variable_name=self.__scratchpad),
+                ]
+            )
+            return template
+
+        def _record_chat_history(self, query: str, response: str):
+            "Record the chat history if accumulation is enabled"""
+            if self.__accumuldate_chat_history:
+                self.__chat_history.extend(
+                    [HumanMessage(content=query), AIMessage(content=response)]
+                )
                             
                         
                     

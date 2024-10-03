@@ -2,6 +2,8 @@ from openai import OpenAI
 import qdrant_client
 from qdrant_client.models import PointStruct
 
+# DECIDE HOW DATA COMES IN
+
 def get_embedding(text, model="text-embedding-3-small"):
    openai_client = OpenAI()
    text = text.replace("\n", " ")

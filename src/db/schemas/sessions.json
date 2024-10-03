@@ -1,0 +1,22 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "properties": {
+      "session_id": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "timestamp": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "session_type": {
+        "type": "string",
+        "enum": ["Scan", "Report", "Notification", "Mitigation"]
+      },
+      "context": {
+        "type": "object"
+      }
+    },
+    "required": ["session_id", "timestamp", "session_type"]
+  }

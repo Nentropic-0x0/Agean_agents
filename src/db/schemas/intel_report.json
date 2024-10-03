@@ -1,0 +1,71 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "properties": {
+      "report_id": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "event_id": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "report_generated_at": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "report_author": {
+        "type": "string"
+      },
+      "threat_actor": {
+        "type": "string"
+      },
+      "malware_family": {
+        "type": "string"
+      },
+      "target_sector": {
+        "type": "string"
+      },
+      "affected_assets": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "attack_vector": {
+        "type": "string"
+      },
+      "risk_score": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 100
+      },
+      "impact_assessment": {
+        "type": "string"
+      },
+      "mitigation_effort": {
+        "type": "integer"
+      },
+      "estimated_cost": {
+        "type": "number"
+      },
+      "incident_duration": {
+        "type": "string",
+        "format": "duration"
+      },
+      "threat_level": {
+        "type": "string",
+        "enum": ["low", "medium", "high"]
+      },
+      "additional_context": {
+        "type": "object"
+      },
+      "executive_summary": {
+        "type": "string"
+      },
+      "analyst_notes": {
+        "type": "string"
+      }
+    },
+    "required": ["report_id", "event_id", "report_generated_at", "threat_level", "risk_score"]
+  }

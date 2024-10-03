@@ -1,0 +1,33 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "properties": {
+      "uuid": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "agent_type": {
+        "type": "string"
+      },
+      "timestamp": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "from_agent": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "to_agent": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "message_id": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "message": {
+        "type": "object"
+      }
+    },
+    "required": ["uuid", "agent_type", "timestamp"]
+  }

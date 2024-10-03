@@ -1,16 +1,25 @@
 from qdrant_client import QdrantClient
 from qdrant_client.models import Distance, VectorParams
-
-
-client = QdrantClient(url="http://localhost:6333")
-
-client.create_collection(
-    collection_name="intelligence_reports",
-    vectors_config=VectorParams(size=4, distance=Distance.DOT),
-)
-
-
 from qdrant_client.models import PointStruct
+
+class QdrantDB:
+    def __init__(self, url, collection_name):
+        self.url = url
+        self.collection_name = collection_name
+        self.
+
+def qdrant_client():
+    client = QdrantClient(url="http://localhost:6333")
+    return client
+
+
+    client.create_collection(
+        collection_name="intelligence_reports",
+        vectors_config=VectorParams(size=4, distance=Distance.DOT),
+    )
+
+
+
 
 operation_info = client.upsert(
     collection_name="test_collection",

@@ -1,0 +1,21 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "properties": {
+      "id": {
+        "type": "string"
+      },
+      "timestamp": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "session_id": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "feedback": {
+        "type": "string"
+      }
+    },
+    "required": ["id", "timestamp", "session_id", "feedback"]
+  }

@@ -3,11 +3,9 @@ Configuratio and other utilities
 
 '''
 import os
-from typing import Dict, Optional, Tuple
-
 import yaml
-from dotenv import find_dotenv, load_dotenv
-
+from dotenv import load_dotenv, find_dotenv
+from typing import Dict, Tuple, Optional
 
 def get_api_keys(service):
     if os.path.exists('.env'):
@@ -23,8 +21,4 @@ def get_config() -> Dict:
     
     with open("agent_config.yaml", "r") as config_file:
         config = yaml.safe_load(config_file)
-
-        # Access specific configuration items
-        agents = config['agents']
-        system = config['system']
         #humanloop_settings = config['humanloop']
