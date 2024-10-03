@@ -68,9 +68,9 @@ def set_llm(provider: str = "anthropic"):
     
     # Match provider with the corresponding LLM
     if provider == "anthropic":
-        return ChatAnthropic(api_key=llm_config["providers"][0]["key"], model=llm_config["providers"][0]["model"])
+        return ChatAnthropic(api_key=llm_config["providers"][0]["key"], model=llm_config["providers"][0]["model"],  temperature=0.0)
     elif provider == "openai":
-        return ChatOpenAI(api_key=llm_config["providers"][1]["key"], model=llm_config["providers"][1]["model"])
+        return ChatOpenAI(api_key=llm_config["providers"][1]["key"], model=llm_config["providers"][1]["model"], temperature=0.0)
     elif provider == "ollama":
         return ChatOllama(model=llm_config["providers"][2]["model"])
     else:
@@ -80,6 +80,8 @@ def initialize_llm(provider: str = None):
     """
     Initializes the LLM based on the provider specified in the environment or defaults to OpenAI.
     """
+    provider = set_llm()
+    
     if provider = None:
         provider = os.getenv("LLM_PROVIDER", "anthropic").lower()
     else:

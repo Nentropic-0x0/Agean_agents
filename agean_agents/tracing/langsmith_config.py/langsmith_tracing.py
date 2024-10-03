@@ -1,43 +1,19 @@
-from langchain_core.runnables import RunnableParallel
-from langsmith import RunnableConfig
-from langchain.chains import chain
-from langsmith import tracing 
+import openai
+import Anthropic
+from langsmith.wrappers import wrap_openai, wrap_anthropic
+from langsmith import traceable
 
-import os
+# Auto-trace LLM calls in-context
+oai_client = wrap_openai(openai.Client())
+anthr_client = wrap_anthropic(Anthropic.Client())
 
-if os.getenv("ENABLE_TRACING") == "true":
-    tracing_enabled = True
-else:
-    tracing_enabled = False
+@traceable # Auto-trace this function
+def pipeline(user_input: str):
+    result = client.chat.completions.create(
+        messages=[{"role": "user", "content": user_input}],
+        model="gpt-3.5-turbo"
+    )
+    return result.choices[0].message.content
 
-# Use LangSmith tracing only when enabled
-if tracing_enabled:
-    result = tracing.trace(chain.invoke({"input_data": data}))
-else:
-    result = chain.invoke({"input_data": data})
-
-'''
-# Define multiple chains or agents
-chain1 = LLMChain(llm=llm, prompt=PromptTemplate.from_template("What is the largest city in {country}?"))
-chain2 = LLMChain(llm=llm, prompt=PromptTemplate.from_template("What language is spoken in {country}?"))
-
-# Combine them in a parallel workflow
-combined_workflow = RunnableParallel({
-    "city": chain1,
-    "language": chain2
-})
-
-# Run the combined workflow with tracing
-result = tracing.trace(combined_workflow.invoke({"country": "France"}))
-print(result)
-
-
-
-# Create a configuration with custom tags
-config = RunnableConfig(tags=["testing", "v1"])
-
-# Run a chain with custom tags
-result = chain.invoke({"country": "Germany"}, config=config)
-config = RunnableConfig(tags=["production", "financial-analysis"])
-result = chain.invoke({"input_data": data}, config=config)
-'''
+pipeline("Hello, world!")
+# Out:  Hello there! How can I assist you today?

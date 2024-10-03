@@ -40,6 +40,6 @@ def call_llm_and_validate(query: str):
         # Handle schema validation errors
         print("Validation Error:", e.json())
 
-
+main()
 if __name__ == "__main__":
     main()

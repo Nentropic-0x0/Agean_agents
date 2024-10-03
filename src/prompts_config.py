@@ -1,6 +1,6 @@
 from typing import Optional, Dict, List, Tuple
-from src.core_agent.agean import AGEAN
-from src.system_prompts import ThreatDetectionPrompts, VulnerabilityScannerPrompts, IncidenceResponsePrompts
+from core_agent import AGEAN
+from system_prompts import ThreatDetectionPrompts, VulnerabilityScannerPrompts, IncidenceResponsePrompts
 import json
 
 class CTIPrompts:
@@ -13,13 +13,13 @@ class CTIPrompts:
         objectives: Optional[str] = None,
         env_variables: Optional[str] = None,
         shared_tools: Optional[Dict[str, str]] = None,
-        threat_detection: List[str] = ThreatDetectionPrompts(AGEAN).get_prompts(),
-        vulnerability_scanner: List[str] = VulnerabilityScannerPrompts(AGEAN).get_prompts(),
-        incidence_response: List[str] = IncidenceResponsePrompts(AGEAN).get_prompts(),      
+        threat_prompts: List[str] = ThreatDetectionPrompts(AGEAN).get_prompts(),
+        vuln_prompts: List[str] = VulnerabilityScannerPrompts(AGEAN).get_prompts(),
+        incidence_prompts: List[str] = IncidenceResponsePrompts(AGEAN).get_prompts(),      
     ):
-        self.threat_detection = threat_detection
-        self.vulnerability_scanner = vulnerability_scanner
-        self.incidence_response = incidence_response
+        self.threat_prompts = threat_prompts
+        self.vuln_prompts = vuln_prompts
+        self.incidence_prompts = incidence_prompts
         self.user_prompt = user_prompt
         self.assistant_prompt = assistant_prompt
         self.role = role
@@ -31,10 +31,10 @@ class CTIPrompts:
     
         
     def _get_agent_prompts(self) -> List[str]:
-        return self.threat_detection, self.vulnerability_scanner, self.incidence_response
+        return self.threat_prompts, self.vuln_prompts, self.incidence_prompts
         
-    def as_message(self, agent: str) -> Tuple:
-        "Return all prompts as a tuple of strings for tools"
+    def tools_as_message(self, agent: str) -> Tuple:
+        "Return all tools as a tuple of strings for tools"
         return self._get_agents(), str(self)
     
     def __str__(self) -> str:
@@ -56,3 +56,4 @@ class CTIPrompts:
         return s
     
     def call_llm_judge(msg: json):
+        pass
