@@ -2,6 +2,11 @@
 
 ### LangGraph-based Agent Graph for Accurate, Timely Analysis of Data 🌍🛰️
 
+<img src="public/github.svg" alt="Github" width="10%" />
+<img src="public/langchain.svg" alt="Langchain" width="10%" />
+<img src="public/pytorch.svg" alt="Pytorch" width="10%" />
+<img src="public/rust.svg" alt="Rust" width="10%" />
+
 ## Overview
 
 **Agean Agents Alliteration** is an early-stage project focused on creating a sophisticated, LangGraph-powered agent system designed for **accurate and timely data analysis**. By leveraging advanced graph-based agents, we aim to optimize the inflow and processing of data while maintaining high levels of accuracy and field consistency. 🌐🤖
