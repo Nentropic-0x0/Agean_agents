@@ -3,9 +3,11 @@ Configuratio and other utilities
 
 '''
 import os
+from typing import Dict, Optional, Tuple
+
 import yaml
-from dotenv import load_dotenv, find_dotenv
-from typing import Dict, Tuple, Optional
+from dotenv import find_dotenv, load_dotenv
+
 
 def get_api_keys(service):
     if os.path.exists('.env'):

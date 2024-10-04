@@ -1,7 +1,10 @@
-from typing import Optional, Dict, List, Tuple
-from core_agent import AGEAN
-from system_prompts import ThreatDetectionPrompts, VulnerabilityScannerPrompts, IncidenceResponsePrompts
 import json
+from typing import Dict, List, Optional, Tuple
+
+from core_agent import AGEAN
+from system_prompts import (IncidenceResponsePrompts, ThreatDetectionPrompts,
+                            VulnerabilityScannerPrompts)
+
 
 class CTIPrompts:
     def __init__(

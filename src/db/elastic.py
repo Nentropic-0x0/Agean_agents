@@ -1,6 +1,8 @@
 import os
-from dotenv import load_dotenv, find_dotenv
+
+from dotenv import find_dotenv, load_dotenv
 from elasticsearch import Elasticsearch
+
 load_dotenv(find_dotenv())
 
 # Get the Elasticsearch host and port from environment variables

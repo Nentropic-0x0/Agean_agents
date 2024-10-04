@@ -1,36 +1,41 @@
 import json
-import logging
-from typing import Dict, Any, Optional
+from logger import logger
+from datetime import datetime
+from typing import Any, Dict, Optional
+from sqlalchemy.exc import DataError, IntegrityError
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy.exc import IntegrityError, DataError
-from schemas.schemas import ( \
-    ECSCybersecurity, AgentMetadata, IntelligenceReports, Sessions, \
-    InputData, FeedbackData, AgentMessages
+from functools import wraps
+
+from schemas.schemas import (
+    AgentMessages, AgentMetadata, ECSCybersecurity, FeedbackData, 
+    InputData, IntelligenceReports, Sessions
 )
+from session_management import FeedbackData, InputData, Sessions
 
-# Setting up logging to track operations
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+# Setup logging
 
-# Example: SQLAlchemy session setup (replace with your actual DB engine)
+
+# SQLAlchemy session setup (replace with your actual DB engine)
 Session = sessionmaker()
 session = Session()
 
+# Input validation decorator
+def validate_input(func):
+    @wraps(func)
+    def wrapper(data: Dict[str, Any], *args, **kwargs):
+        if not isinstance(data, dict):
+            raise ValueError("Input data must be a dictionary.")
+        # Validate that keys exist and values are positive if needed
+        for key, value in data.items():
+            if value is None or (isinstance(value, (int, float)) and value <= 0):
+                raise ValueError(f"Invalid value for {key}: {value}")
+        return func(data, *args, **kwargs)
+    return wrapper
+
+# Schema data validator
 def validate_data(data: Dict[str, Any], schema: Any) -> Optional[str]:
-    """
-    Validates that the data matches the schema's required fields and types.
-
-    Args:
-        data (Dict[str, Any]): Data to be validated.
-        schema (Any): The SQLAlchemy schema class for validation.
-
-    Returns:
-        Optional[str]: An error message if validation fails, otherwise None.
-    """
     try:
-        # Validate required fields and types
         schema_fields = {field.name: field for field in schema.__table__.columns}
-        
         for field, value in data.items():
             if field in schema_fields:
                 expected_type = schema_fields[field].type.python_type
@@ -41,89 +46,95 @@ def validate_data(data: Dict[str, Any], schema: Any) -> Optional[str]:
         logger.error(f"Validation error: {e}")
         return str(e)
 
-def load_schema_and_fit(data: Dict[str, Any]) -> str:
-    """
-    Function that dynamically loads the schema based on the metadata in the JSON package,
-    validates the data against the schema, and sends it to the service. If there's an error,
-    it will request the same message from the origin and retry the process.
+# Handle session validation or creation
+def get_or_create_session(session_id: str, session_type: str, context: str = None) -> Sessions:
+    session_instance = session.query(Sessions).filter_by(session_id=session_id).first()
+    if session_instance:
+        logger.info(f"Found existing session: {session_id}")
+        return session_instance
 
-    Args:
-        data (Dict[str, Any]): JSON payload received from the message queue or service.
+    new_session = Sessions(session_id=session_id, session_type=session_type, context=context, timestamp=datetime.utcnow())
+    session.add(new_session)
+    session.commit()
+    logger.info(f"Created new session: {session_id}")
+    return new_session
 
-    Returns:
-        str: Status message indicating success or failure.
-    """
+# Main function for schema validation and data processing
+@validate_input  # Applying the input validation decorator
+def process_data(data: Dict[str, Any]) -> str:
     try:
-        # Step 1: Extract relevant metadata
-        schema_type = data.get("schema_type")  # Metadata from JSON to determine the schema type
-        event_type = data.get("event_type", None)
-        session_id = data.get("session_id", None)
-        
-        logger.info(f"Processing event with schema: {schema_type}, event_type: {event_type}")
+        # Step 1: Determine schema type
+        schema_type = data.get("schema_type")
+        if not schema_type:
+            raise ValueError("Schema type is required.")
 
-        # Step 2: Select the relevant schema based on the extracted metadata
-        schema = None
-        if schema_type == "agent_metadata":
-            schema = AgentMetadata
-        elif schema_type == "ecs_cybersecurity":
-            schema = ECSCybersecurity
-        elif schema_type == "intelligence_reports":
-            schema = IntelligenceReports
-        elif schema_type == "sessions":
-            schema = Sessions
-        elif schema_type == "input_data":
-            schema = InputData
-        elif schema_type == "feedback_data":
-            schema = FeedbackData
-        elif schema_type == "agent_messages":
-            schema = AgentMessages
-        else:
-            raise ValueError(f"Unknown schema type: {schema_type}")
+        schema = get_schema_by_type(schema_type)
 
-        # Step 3: Validate the data against the schema
+        # Step 2: Handle session, if provided
+        session_id = data.get("session_id")
+        session_type = data.get("session_type")
+        if session_id and session_type:
+            get_or_create_session(session_id, session_type, data.get("session_context"))
+
+        # Step 3: Validate data against schema
         validation_error = validate_data(data, schema)
         if validation_error:
             raise ValueError(f"Data validation failed: {validation_error}")
 
-        # Step 4: Map the data to the selected schema
-        schema_instance = schema(**data)  # Instantiate schema with the data
-        session.add(schema_instance)
-
-        # Step 5: Commit the transaction (save to the database)
-        session.commit()
+        # Step 4: Save data to the database
+        save_to_db(schema, data)
 
         logger.info(f"Successfully processed and saved data for schema: {schema_type}")
-
         return "Data successfully processed and saved."
-
+    
     except (IntegrityError, DataError) as db_error:
-        logger.error(f"Database error: {db_error}. Requesting data again from the origin.")
-        session.rollback()  # Roll back the transaction in case of an error
+        logger.error(f"Database error: {db_error}. Requesting data again.")
+        session.rollback()
         return request_data_again(data)
 
     except ValueError as ve:
-        logger.error(f"Value error: {ve}. Unable to process schema: {schema_type}")
+        logger.error(f"Value error: {ve}")
         return f"Failed: {ve}"
 
     except Exception as e:
-        logger.error(f"An unexpected error occurred: {e}. Retrying...")
+        logger.error(f"Unexpected error: {e}. Retrying...")
         return request_data_again(data)
 
+# Select the schema dynamically
+def get_schema_by_type(schema_type: str) -> Any:
+    schema_map = {
+        "agent_metadata": AgentMetadata,
+        "ecs_cybersecurity": ECSCybersecurity,
+        "intelligence_reports": IntelligenceReports,
+        "sessions": Sessions,
+        "input_data": InputData,
+        "feedback_data": FeedbackData,
+        "agent_messages": AgentMessages,
+    }
+    schema = schema_map.get(schema_type)
+    if not schema:
+        raise ValueError(f"Unknown schema type: {schema_type}")
+    return schema
+
+# Save data to the database
+def save_to_db(schema: Any, data: Dict[str, Any]) -> None:
+    schema_instance = schema(**data)
+    session.add(schema_instance)
+    session.commit()
+
+# Retry request by simulating data fetch again
 def request_data_again(data: Dict[str, Any]) -> str:
-    """
-    Simulates requesting the same message from the origin again in case of an error.
+    logger.info(f"Retrying message for session: {data.get('session_id', 'unknown')}")
+    return process_data(data)
+'''
+# Example usage
+example_data = {
+    "schema_type": "input_data",
+    "session_id": "123",
+    "session_type": "Scan",
+    "data": {"key": "value"}
+}
 
-    Args:
-        data (Dict[str, Any]): The original data that caused the error.
-
-    Returns:
-        str: Status message after retrying.
-    """
-    # Simulate requesting the same message from the origin
-    logger.info(f"Retrying message from origin: {data.get('message_id', 'unknown')}")
-
-    # Simulate reprocessing the data after receiving it again
-    # In a real-world scenario, this could involve making an API call or fetching the message again.
-    retry_status = load_schema_and_fit(data)  # Retry processing the data
-
-    return retry_status
+result = process_data(example_data)
+print(result)
+'''

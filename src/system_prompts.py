@@ -1,7 +1,9 @@
 from typing import List
-from core_agent.core_agent import AGEAN
-from prompts_config import CTIPrompts
+
 from pydantic import BaseModel
+
+from prompts_config import CTIPrompts
+from src.core_agent.agean import AGEAN
 
 """
 Module for defining system prompts for various AI agents in the agean_cyber system.

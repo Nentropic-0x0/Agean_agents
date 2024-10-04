@@ -1,5 +1,6 @@
-from langchain.tools import BaseTool
 import requests
+from langchain.tools import BaseTool
+
 
 class OpenVASScanTool(BaseTool):
     name = "openvas_scan"

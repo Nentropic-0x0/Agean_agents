@@ -2,6 +2,7 @@ import operator
 from datetime import datetime
 from typing import Annotated, TypedDict, Union
 
+import python_nmap
 from dotenv import load_dotenv
 from langchain import hub
 from langchain.agents import create_react_agent
@@ -11,9 +12,6 @@ from langchain_core.messages import BaseMessage
 from langchain_core.tools import tool
 from langgraph.graph import END, StateGraph
 from langgraph.prebuilt import ToolExecutor, ToolInvocation
-
-import python_nmap
-
 
 load_dotenv()
 

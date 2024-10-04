@@ -1,5 +1,5 @@
-from openai import OpenAI
 import qdrant_client
+from openai import OpenAI
 from qdrant_client.models import PointStruct
 
 # DECIDE HOW DATA COMES IN

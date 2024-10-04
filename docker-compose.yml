@@ -50,7 +50,6 @@ services:
       - LANGCHAIN_API_KEY=${LANGCHAIN_API_KEY}  # API keys loaded from the environment
       - ELASTICSEARCH_HOST=elasticsearch
       - ELASTICSEARCH_PORT=9200
-      - AGENT_ID=1
     expose:
      - "4040"
     logging:

@@ -1,5 +1,8 @@
 import os
+
+from ecs_mapper import map_ecs
 from sqlalchemy import SQLAlchemyDatabase
+
 
 def sqlite3_main():
     sqlite_db = SQLAlchemyDatabase("sqlite:///example.db")
@@ -18,5 +21,8 @@ def sqlite3_main():
         print(f"Created {file} table")
     
     return print("Done")
+
+map_ecs():
+    
 
     

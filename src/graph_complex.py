@@ -1,119 +1,137 @@
-import os
+from typing import Dict, Any, Optional
+from functools import wraps
+import logging
 
-from langchain.chains import LLMChain
-from langchain.prompts import PromptTemplate
-from langchain_community.llms import OpenAI
-from langsmith import LangSmith
-from dotenv import load_dotenv
-load_dotenv()
-from llm import initialize_llm
-from agents.ThreatDetectionAgent import ThreatDetectionAgent
-from agents.VulnerabilityScannerAgent import VulnerabilityScannerAgent
-from agents.IncidentReportingAgent import IncidentReportingAgent
-from prompts_config import CTIPrompts
+# Example schema imports (replace these with your actual schema classes)
+from schemas import AgentMessages, AgentMetadata, ECSCybersecurity, FeedbackData, InputData, IntelligenceReports, Sessions
 
+# Setting up logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
+# Step 1: Create a schema selector function
+def select_schema(schema_type: str):
+    """
+    Selects the schema class based on the provided schema type.
 
-from langchain_core.messages import (
-    BaseMessage,
-    HumanMessage,
-    ToolMessage,
-)
-from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+    Args:
+        schema_type (str): The type of schema to select.
 
-from langgraph.graph import END, StateGraph, START
+    Returns:
+        schema: The selected schema class.
+    """
+    schema_map = {
+        "agent_metadata": AgentMetadata,
+        "ecs_cybersecurity": ECSCybersecurity,
+        "intelligence_reports": IntelligenceReports,
+        "sessions": Sessions,
+        "input_data": InputData,
+        "feedback_data": FeedbackData,
+        "agent_messages": AgentMessages,
+    }
+    schema = schema_map.get(schema_type)
+    if not schema:
+        raise ValueError(f"Unknown schema type: {schema_type}")
+    return schema
 
-import operator
-from typing import Annotated, List, Tuple
-from typing_extensions import TypedDict
+# Step 2: Define the schema validation decorator
+def schema_validator(func):
+    """
+    Decorator that selects the appropriate schema and validates data against it.
 
+    Args:
+        func: The function to wrap, which receives validated data.
 
-### Initialize Agents
-def init_agents():
-    threat_detection, vuln_agent, incident_agent, cti_prompts = init_agents()
-    threat_detection, vuln_scan, incidence_response= CTIPrompts()._get_agent_prompts()
-    return ThreatDetectionAgent(), VulnerabilityScannerAgent(), IncidentReportingAgent(), CTIPrompts()
+    Returns:
+        The decorated function with schema validation.
+    """
+    @wraps(func)
+    def wrapper(data: Dict[str, Any], *args, **kwargs):
+        # Extract schema type from the data
+        schema_type = data.get("schema_type")
+        if not schema_type:
+            raise ValueError("Schema type is required.")
 
+        # Select the appropriate schema
+        schema = select_schema(schema_type)
 
+        # Perform the schema validation
+        validation_error = validate_data(data, schema)
+        if validation_error:
+            raise ValueError(f"Data validation failed: {validation_error}")
 
+        # Call the original function if validation passes
+        return func(data, *args, **kwargs)
 
+    return wrapper
 
-# Initialize LangSmith (automatically picks up API key from env vars)
+# Step 3: Define the validate_data function
+def validate_data(data: Dict[str, Any], schema: Any) -> Optional[str]:
+    """
+    Validates the given data against the selected schema.
 
+    Args:
+        data (Dict[str, Any]): Data to validate.
+        schema: The schema class to validate against.
 
-# Define a simple LLM Chain
-def simple_chain():
-    llm = initialize_llm()
-    prompt = PromptTemplate.from_template(prompt_template)
-    chain = LLMChain(llm=llm, prompt=prompt)
+    Returns:
+        Optional[str]: Returns None if validation passes, or an error message if validation fails.
+    """
+    try:
+        schema_fields = {field.name: field for field in schema.__table__.columns}
+        for field, value in data.items():
+            if field in schema_fields:
+                expected_type = schema_fields[field].type.python_type
+                if not isinstance(value, expected_type) and value is not None:
+                    return f"Field {field} should be of type {expected_type}, got {type(value)}"
+        return None
+    except Exception as e:
+        logger.error(f"Validation error: {e}")
+        return str(e)
 
-    # Run the chain with tracing enabled
-    result = tracing.trace(chain.invoke({"country": "France"}))
+# Step 4: Apply the LangChain tool
+# Assume this is a LangChain tool that can be called in a LangChain agent pipeline
 
-    print(f"Result: {result}")
+@schema_validator
+def process_data(data: Dict[str, Any]):
+    """
+    Process the validated data after schema validation.
 
-def _set_if_undefined(var: str):
-    if not os.environ.get(var):
-        os.environ[var] = getpass.getpass(f"Please provide your {var}")
+    Args:
+        data (Dict[str, Any]): Validated data.
 
+    Returns:
+        str: Success message after processing.
+    """
+    logger.info(f"Processing data: {data}")
+    # Simulate data processing (e.g., saving to a database)
+    return "Data successfully processed."
 
-_set_if_undefined("OPENAI_API_KEY")
-_set_if_undefined("TAVILY_API_KEY")
+# Example usage as a LangChain tool (within the LangChain ecosystem)
+def langchain_tool(input_data: Dict[str, Any]):
+    """
+    LangChain tool that processes the input data by validating it using the appropriate schema.
 
-from langchain_community.tools.tavily_search import TavilySearchResults
+    Args:
+        input_data (Dict[str, Any]): The input data to be processed.
 
-tools = [TavilySearchResults(max_results=3)]
+    Returns:
+        str: The result of processing the data.
+    """
+    try:
+        # Process the input data, applying schema validation
+        return process_data(input_data)
+    except Exception as e:
+        return f"Error processing data: {str(e)}"
 
-from langchain import hub
-from langchain_openai import ChatOpenAI
+# Example Input Data
+example_data = {
+    "schema_type": "input_data",  # This dynamically selects the 'InputData' schema
+    "session_id": "12345",
+    "session_type": "Scan",
+    "data": {"key": "value"}
+}
 
-from langgraph.prebuilt import create_react_agent
-
-# Get the prompt to use - you can modify this!
-
-prompt.pretty_print()
-
-# Choose the LLM that will drive the agent
-
-
-
-
-class PlanExecute(TypedDict):
-    input: str
-    plan: List[str]
-    past_steps: Annotated[List[Tuple], operator.add]
-    response: str
-
-
-from pydantic import BaseModel, Field
-
-
-class Plan(BaseModel):
-    """Plan to follow in future"""
-
-    steps: List[str] = Field(
-        description="different steps to follow, should be in sorted order"
-    )
-
-from langchain_core.prompts import ChatPromptTemplate
-
-from langchain_community.vectorstores import Chroma
-from langchain_openai import OpenAIEmbeddings
-from langchain_community.document_loaders import GitLoader
-from langchain_text_splitters import (
-    Language,
-    RecursiveCharacterTextSplitter,
-)
-
-loader = GitLoader(
-    clone_url="https://github.com/hslatman/",
-    repo_path="./awesome-threat-intellgence",
-    branch="main",
-)
-
-python_splitter = RecursiveCharacterTextSplitter.from_language(
-    language=Language.PYTHON, chunk_size=10000, chunk_overlap=100
-)
-
-docs = loader.load()
-docs = [doc for doc in docs if len(doc.page_content) < 50000]
+# Test the LangChain tool
+result = langchain_tool(example_data)
+print(result)

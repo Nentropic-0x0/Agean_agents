@@ -1,30 +1,28 @@
 import os
 
+from dotenv import load_dotenv
 from langchain.chains import LLMChain
 from langchain.prompts import PromptTemplate
 from langchain_community.llms import OpenAI
 from langsmith import LangSmith
-from dotenv import load_dotenv
+
 load_dotenv()
-from llm import initialize_llm
-from agents.ThreatDetectionAgent import ThreatDetectionAgent
-from agents.VulnerabilityScannerAgent import VulnerabilityScannerAgent
-from agents.IncidentReportingAgent import IncidentReportingAgent
-from prompts_config import CTIPrompts
-from system_prompts import ThreatDetectionPrompts, VulnerabilityScannerPrompts, IncidenceResponsePrompts
-
-from langchain_core.messages import (
-    BaseMessage,
-    HumanMessage,
-    ToolMessage,
-)
+from langchain_core.messages import BaseMessage, HumanMessage, ToolMessage
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+from langgraph.graph import END, START, StateGraph
 
-from langgraph.graph import END, StateGraph, START
+from agents.IncidentReportingAgent import IncidentReportingAgent
+from agents.ThreatDetectionAgent import ThreatDetectionAgent
+from src.agents import vuln_agent
+from llm import initialize_llm
+from prompts_config import CTIPrompts
+from system_prompts import (IncidenceResponsePrompts, ThreatDetectionPrompts,
+                            VulnerabilityScannerPrompts)
+
 
 ### Initialize Agents
 def init_agents():
-    return ThreatDetectionAgent(), VulnerabilityScannerAgent(), IncidentReportingAgent(), CTIPrompts()
+    return ThreatDetectionAgent(), vuln_agent(), IncidentReportingAgent(), CTIPrompts()
 
 
 
@@ -61,7 +59,6 @@ tools = [TavilySearchResults(max_results=3)]
 
 from langchain import hub
 from langchain_openai import ChatOpenAI
-
 from langgraph.prebuilt import create_react_agent
 
 # Get the prompt to use - you can modify this!
@@ -73,6 +70,7 @@ agent_executor = create_react_agent(llm, tools, state_modifier=prompt)
 
 import operator
 from typing import Annotated, List, Tuple
+
 from typing_extensions import TypedDict
 
 

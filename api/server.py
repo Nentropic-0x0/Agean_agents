@@ -1,8 +1,9 @@
-from fastapi import FastAPI, HTTPException
-from elasticsearch import Elasticsearch
-from pydantic import BaseModel
-from typing import Dict, Any
 import os
+from typing import Any, Dict
+
+from elasticsearch import Elasticsearch
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel
 
 app = FastAPI()
 

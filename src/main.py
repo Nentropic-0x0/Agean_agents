@@ -1,8 +1,10 @@
-from langchain_openai import ChatOpenAI
 import os
-from dotenv import load_dotenv, find_dotenv
-from utils import get_api_keys
 from typing import Dict
+
+from dotenv import find_dotenv, load_dotenv
+from langchain_openai import ChatOpenAI
+
+from utils import get_api_keys
 
 load_dotenv(find_dotenv())
 

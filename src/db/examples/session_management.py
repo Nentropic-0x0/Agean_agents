@@ -1,7 +1,9 @@
-from sqlalchemy import Column, String, Text, DateTime, ForeignKey, CheckConstraint
-from sqlalchemy.orm import relationship
 from datetime import datetime
+
+from sqlalchemy import (CheckConstraint, Column, DateTime, ForeignKey, String,
+                        Text)
 from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import relationship
 
 Base = declarative_base()
 

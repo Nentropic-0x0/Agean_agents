@@ -1,9 +1,11 @@
-from sqlalchemy import create_engine, Column, String, Integer, Text, ForeignKey, Float, Interval, JSON, TIMESTAMP
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker, relationship
-from sqlalchemy.dialects.postgresql import UUID, JSONB
-from uuid import uuid4
 import datetime
+from uuid import uuid4
+
+from sqlalchemy import (JSON, TIMESTAMP, Column, Float, ForeignKey, Integer,
+                        Interval, String, Text, create_engine)
+from sqlalchemy.dialects.postgresql import JSONB, UUID
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import relationship, sessionmaker
 
 # Define the base for SQLAlchemy ORM models
 Base = declarative_base()

@@ -1,6 +1,6 @@
 from qdrant_client import QdrantClient
-from qdrant_client.models import Distance, VectorParams
-from qdrant_client.models import PointStruct
+from qdrant_client.models import Distance, PointStruct, VectorParams
+
 
 class QdrantDB:
     def __init__(self, url, collection_name):
@@ -48,7 +48,7 @@ print(search_result)
 
 # Add a Filter
 
-from qdrant_client.models import Filter, FieldCondition, MatchValue
+from qdrant_client.models import FieldCondition, Filter, MatchValue
 
 search_result = client.query_points(
     collection_name="test_collection",

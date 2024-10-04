@@ -1,107 +1,95 @@
 import json
 from datetime import datetime
-from src.llm import get_llm
-from src.system_prompts import get_prompts
-from core_agent import AGEAN
-from typing import Dict, Any, List
-from src.prompts_config import CTIPrompts
+from typing import Any, Dict, List
 
+from core_agent import AGEAN
+from src.llm import get_llm
+from src.prompts_config import CTIPrompts
+from src.system_prompts import _get_prompts
+from langchain.agents import AgentExecutor
+from logger import logger 
+
+
+import json
+from datetime import datetime
+from typing import Dict, Any, List
 
 class VulnerabilityScannerAgent(AGEAN):
+
     def __init__(self, 
+                 cti=CTIPrompts(),  # Ensure CTIPrompts is correctly imported
                  name: str = "VulnerabilityScanner", 
-                 llm: str = get_llm(), 
+                 llm=None,  # Default to None, assuming LLM is passed during instantiation
                  verbose: bool = True, 
                  streaming: bool = False, 
-                 prompts: CTIPrompts = get_prompts(), 
+                 vuln_prompts: List[str] = None,  # Correct the prompt structure
                  accumulate_chat_history: bool = True):
+        
         """
         Initializes the VulnerabilityScannerAgent with specific LLM, prompts, and behavior settings.
         """
         super().__init__(name=name, accumulate_chat_history=accumulate_chat_history, 
-                         verbose=verbose, streaming=streaming)
-        self.llm = llm
-        self.prompts = prompts
-        self.__verbose = verbose
+                         verbose=verbose, streaming=streaming,)
+        self.llm = llm or get_llm()  # Assign the LLM if not provided
+        self.verbose = verbose
+        self.system_data = {}
 
-    # Core and critical methods for Vulnerability Scanner Agent
+        # Initialize vulnerability prompts from CTIPrompts
+        self.vuln_prompts = vuln_prompts or cti.vuln_prompts._get_agent_prompts()
+
+    # Core methods for Vulnerability Scanner Agent
 
     def _get_executor(self, verbose: bool) -> "AgentExecutor":
         """
         Initialize and return an AgentExecutor for the vulnerability scanning agent.
-
-        Args:
-            verbose (bool): Whether the executor should operate in verbose mode.
-        
-        Returns:
-            AgentExecutor: Executor that handles vulnerability scanning processes.
         """
         executor = AgentExecutor(agent=self.llm, tools=self._get_tools(), verbose=verbose)
         return executor
 
     def _receive_system_data(self, data: Dict[str, Any]):
         """
-        Receives and processes system data for vulnerability scanning. The input should be a dictionary format.
-
-        Args:
-            data (Dict[str, Any]): Incoming system data that will be used to check for vulnerabilities.
-        
-        Example:
-            {
-                "system": "Linux",
-                "version": "Ubuntu 20.04",
-                "patch_level": "2023-01-01",
-                "installed_software": ["nginx", "openssl", "python"]
-            }
+        Receives and processes system data for vulnerability scanning.
         """
         self.system_data = data
-        if self.__verbose:
+        if self.verbose:
             print(f"Received system data: {json.dumps(self.system_data, indent=2)}")
 
     def _to_json(self, data: Dict[str, Any]) -> str:
         """
         Converts system or vulnerability data to JSON format.
-
-        Args:
-            data (Dict[str, Any]): A dictionary containing system or vulnerability information.
-        
-        Returns:
-            str: A JSON-formatted string of the input data.
         """
         return json.dumps(data, indent=4)
 
     def scan_for_vulnerabilities(self) -> str:
         """
         Scans the received system data for vulnerabilities using vulnerability databases like CVE.
-
-        This method processes the system data to check for known vulnerabilities.
-
-        Returns:
-            str: A list of detected vulnerabilities.
         """
-        if not hasattr(self, 'system_data'):
+        if not hasattr(self, 'system_data') or not self.system_data:
             raise ValueError("No system data has been received for scanning.")
-
-        # Example: Scan system using LLM and vulnerability database (CVE, etc.)
-        query = f"Check for vulnerabilities in this system: {self._to_json(self.system_data)}"
-        response = self.invoke(query)
         
-        if self.__verbose:
+        # Construct the query for the LLM or database
+        query = f"Check for vulnerabilities in this system: {self._to_json(self.system_data)}"
+        
+        # Invoke the LLM to scan for vulnerabilities (assuming LLM interaction)
+        response = self.invoke(query)  # invoke method should be implemented properly
+        
+        if self.verbose:
             print(f"Vulnerability scan result: {response}")
         
+        return response
+
+    def invoke(self, query: str) -> str:
+        """
+        Simulate invoking the LLM to process a query.
+        """
+        # Example interaction with the LLM (self.llm)
+        response = self.llm.process(query)
         return response
 
     def get_vulnerability_info(self, cve_id: str) -> Dict[str, Any]:
         """
         Fetches detailed vulnerability information from a vulnerability database (e.g., CVE) by CVE ID.
-
-        Args:
-            cve_id (str): The unique CVE identifier for the vulnerability.
-        
-        Returns:
-            Dict[str, Any]: A dictionary containing vulnerability details (description, severity, etc.).
         """
-        # Example integration with an API for fetching CVE details
         vulnerability_info = {
             "cve_id": cve_id,
             "description": "Example vulnerability description.",
@@ -110,7 +98,7 @@ class VulnerabilityScannerAgent(AGEAN):
             "recommendations": ["Upgrade to the latest version."]
         }
         
-        if self.__verbose:
+        if self.verbose:
             print(f"Fetched vulnerability info: {json.dumps(vulnerability_info, indent=2)}")
         
         return vulnerability_info
@@ -118,14 +106,10 @@ class VulnerabilityScannerAgent(AGEAN):
     def generate_report(self) -> str:
         """
         Generates a vulnerability scanning report based on the scan results.
-
-        Returns:
-            str: A JSON string representing the final report with vulnerabilities found and recommended actions.
         """
-        if not hasattr(self, 'system_data'):
+        if not hasattr(self, 'system_data') or not self.system_data:
             raise ValueError("No system data to generate a report from.")
         
-        # Example report structure
         vulnerabilities_found = self.scan_for_vulnerabilities()
         report = {
             "scan_time": datetime.utcnow().isoformat(),
@@ -136,7 +120,7 @@ class VulnerabilityScannerAgent(AGEAN):
         }
         
         report_json = self._to_json(report)
-        if self.__verbose:
+        if self.verbose:
             print(f"Generated report: {report_json}")
         
         return report_json
@@ -144,11 +128,7 @@ class VulnerabilityScannerAgent(AGEAN):
     def _get_tools(self) -> List:
         """
         Retrieve tools specific to vulnerability scanning, such as CVE fetchers or patch analyzers.
-
-        Returns:
-            List: A list of tools that can be used by the agent.
         """
-        # Example of defining tools (use your actual toolset integration)
         return [
             {"name": "CVE Fetcher", "description": "Fetch vulnerabilities from CVE database."},
             {"name": "Patch Analyzer", "description": "Analyze system patches."}
@@ -157,13 +137,10 @@ class VulnerabilityScannerAgent(AGEAN):
     def log_event(self, log_data: Dict[str, Any]):
         """
         Logs the results of the vulnerability scan for auditing and future reference.
-
-        Args:
-            log_data (Dict[str, Any]): The log data to be saved.
         """
         log_json = self._to_json(log_data)
-        if self.__verbose:
+        if self.verbose:
             print(f"Logging event: {log_json}")
-        # Simulate logging here (e.g., save to file, send to logging system, etc.)
+        # Simulate logging here
         with open("vulnerability_scan_log.json", "a") as f:
             f.write(f"{log_json}\n")

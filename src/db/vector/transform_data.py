@@ -1,7 +1,9 @@
 import json
 from typing import Any, Dict, List
+
+from langchain.embeddings import HuggingFaceEmbeddings, OpenAIEmbeddings
 from transformers import pipeline
-from langchain.embeddings import OpenAIEmbeddings, HuggingFaceEmbeddings
+
 
 class IntelligenceReportVectorizer:
     

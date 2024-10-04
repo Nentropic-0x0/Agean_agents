@@ -1,21 +1,24 @@
 import asyncio
 import json
 from datetime import datetime
+from typing import Any, Dict, List
+
 from langchain.agents import AgentExecutor
-from src.llm import get_llm
-from src.system_prompts import get_prompts
+
 from core_agent import AGEAN
-from typing import Dict, Any, List
-from src.prompts_config import CTIPrompts
+from src.llm import get_llm
+from src.prompts_config import CTIPrompts, _get_prompts_agent
+from src.agents import threat_agent
 
 
 class ThreatDetectionAgent(AGEAN):
+    cti = CTIPrompts()
     def __init__(self, 
                  name: str = "CTIA", 
                  llm: str = get_llm(), 
                  verbose: bool = True, 
                  streaming: bool = False, 
-                 prompts: CTIPrompts = get_prompts(), 
+                 prompts: CTIPrompts = cti.threat_prompts._get_prompts(), 
                  accumulate_chat_history: bool = True):
         """
         Initializes the ThreatDetectionAgent with specific LLM, prompts, and behavior settings.
